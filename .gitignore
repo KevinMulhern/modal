@@ -1,0 +1,15 @@
+.idea
+.phpunit.cache
+build
+composer.lock
+coverage
+phpunit.xml
+phpstan.neon
+testbench.yaml
+vendor
+/docs/.vitepress/cache
+/demo-app/storage/debugbar
+.DS_Store
+/demo-app/tests/Browser/downloads
+react/inertiaui-modal-react-*.tgz
+vue/inertiaui-modal-vue-*.tgz

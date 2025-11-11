@@ -367,7 +367,7 @@ export const ModalStackProvider = ({ children }) => {
 
             let useInertiaRouter = useBrowserHistory
 
-            if (stack.length === 0) {
+            if (stack.length === 0 && useBrowserHistory) {
                 baseUrl = typeof window !== 'undefined' ? window.location.href : ''
             }
 
@@ -623,3 +623,8 @@ export const ModalRoot = ({ children }) => {
         </>
     )
 }
+
+export const modalRouterHeaders = () => ({
+    'X-InertiaUI-Modal-Use-Router': 1,
+    'X-InertiaUI-Modal-Base-Url': baseUrl,
+})
