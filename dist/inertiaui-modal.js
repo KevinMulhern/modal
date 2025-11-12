@@ -265,7 +265,7 @@ const ln = ({ children: e }) => {
         return;
       }
       const [j, we] = Yr(c, h || "", u, O), ce = N;
-      if (t.length === 0 && N && (pe = typeof window < "u" ? window.location.href : ""), g = {
+      if (N && (pe = typeof window < "u" ? window.location.href : ""), g = {
         ...g,
         Accept: "text/html, application/xhtml+xml",
         "X-Requested-With": "XMLHttpRequest",
