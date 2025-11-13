@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { getConfig, putConfig, resetConfig } from './config.js'
 import { useModalIndex } from './ModalRenderer.jsx'
-import { useModalStack, ModalRoot, ModalStackProvider, renderApp, initFromPageProps, modalRouterHeaders } from './ModalRoot.jsx'
+import { useModalStack, ModalRoot, ModalStackProvider, renderApp, initFromPageProps } from './ModalRoot.jsx'
 import useModal from './useModal.js'
 import Deferred from './Deferred.jsx'
 import HeadlessModal from './HeadlessModal.jsx'
@@ -31,5 +31,4 @@ export {
     useModal,
     useModalIndex,
     useModalStack,
-    modalRouterHeaders,
 }
