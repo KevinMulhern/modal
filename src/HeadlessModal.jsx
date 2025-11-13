@@ -12,10 +12,14 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
     const modalContext = useMemo(() => (name ? localModalContext : stack[modalIndex]), [name, localModalContext, modalIndex, stack])
 
     const nextIndex = useMemo(() => {
-        return stack.find((m) => m.shouldRender && m.index > modalContext?.index)?.index
-    }, [modalIndex, stack])
+        if (!modalContext) return null
+        return stack.find((m) => m.shouldRender && m.index > modalContext.index)?.index
+    }, [modalContext, stack])
 
-    const configSlideover = useMemo(() => modalContext?.config.slideover ?? props.slideover ?? getConfig('type') === 'slideover', [props.slideover])
+    const configSlideover = useMemo(
+        () => modalContext?.config?.slideover ?? props.slideover ?? getConfig('type') === 'slideover',
+        [props.slideover, modalContext?.config],
+    )
 
     const config = useMemo(
         () => ({
@@ -28,14 +32,16 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
             position: props.position ?? getConfigByType(configSlideover, 'position'),
             ...modalContext?.config,
         }),
-        [props, modalContext?.config],
+        [props, configSlideover, modalContext?.config],
     )
 
     useEffect(() => {
+        // Named / local modals
         if (name) {
             let removeListeners = null
 
             registerLocalModal(name, (localContext) => {
+                if (!localContext) return
                 removeListeners = localContext.registerEventListenersFromProps(props)
                 setLocalModalContext(localContext)
             })
@@ -47,8 +53,14 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
             }
         }
 
+        // Stack-based modal: if there's no modal yet (e.g. hard refresh),
+        // just don't try to attach listeners.
+        if (!modalContext) {
+            return
+        }
+
         return modalContext.registerEventListenersFromProps(props)
-    }, [name])
+    }, [name, modalContext, props, registerLocalModal, removeLocalModal])
 
     // Store the latest modalContext in a ref to maintain reference
     const modalContextRef = useRef(modalContext)
@@ -59,20 +71,19 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
     }, [modalContext])
 
     useEffect(() => {
-        if (modalContext !== null) {
-            modalContext.isOpen ? onSuccess?.() : onClose?.()
-        }
+        if (!modalContext) return
+        modalContext.isOpen ? onSuccess?.() : onClose?.()
     }, [modalContext?.isOpen])
 
     const [rendered, setRendered] = useState(false)
 
     useEffect(() => {
-        if (rendered && modalContext !== null && modalContext.isOpen) {
+        if (rendered && modalContext && modalContext.isOpen) {
             modalContext.onTopOfStack ? onFocus?.() : onBlur?.()
         }
 
         setRendered(true)
-    }, [modalContext?.onTopOfStack])
+    }, [modalContext?.onTopOfStack, modalContext?.isOpen])
 
     useImperativeHandle(
         ref,
@@ -83,7 +94,7 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
             getChildModal: () => modalContextRef.current?.getChildModal(),
             getParentModal: () => modalContextRef.current?.getParentModal(),
             reload: (...args) => modalContextRef.current?.reload(...args),
-            setOpen: () => modalContextRef.current?.setOpen(),
+            setOpen: (...args) => modalContextRef.current?.setOpen(...args),
 
             get id() {
                 return modalContextRef.current?.id
@@ -107,35 +118,38 @@ const HeadlessModal = forwardRef(({ name, children, onFocus = null, onBlur = nul
                 return modalContextRef.current?.shouldRender
             },
         }),
-        [modalContext],
+        [],
     )
 
-    return (
-        modalContext?.shouldRender && (
-            <>
-                {typeof children === 'function'
-                    ? children({
-                          afterLeave: modalContext.afterLeave,
-                          close: modalContext.close,
-                          config,
-                          emit: modalContext.emit,
-                          getChildModal: modalContext.getChildModal,
-                          getParentModal: modalContext.getParentModal,
-                          id: modalContext.id,
-                          index: modalContext.index,
-                          isOpen: modalContext.isOpen,
-                          modalContext,
-                          onTopOfStack: modalContext.onTopOfStack,
-                          reload: modalContext.reload,
-                          setOpen: modalContext.setOpen,
-                          shouldRender: modalContext.shouldRender,
-                      })
-                    : children}
+    // Hard guard: if there is no modalContext or it shouldn't render yet, render nothing.
+    if (!modalContext || !modalContext.shouldRender) {
+        return null
+    }
 
-                {/* Next modal in the stack */}
-                {nextIndex && <ModalRenderer index={nextIndex} />}
-            </>
-        )
+    return (
+        <>
+            {typeof children === 'function'
+                ? children({
+                      afterLeave: modalContext.afterLeave,
+                      close: modalContext.close,
+                      config,
+                      emit: modalContext.emit,
+                      getChildModal: modalContext.getChildModal,
+                      getParentModal: modalContext.getParentModal,
+                      id: modalContext.id,
+                      index: modalContext.index,
+                      isOpen: modalContext.isOpen,
+                      modalContext,
+                      onTopOfStack: modalContext.onTopOfStack,
+                      reload: modalContext.reload,
+                      setOpen: modalContext.setOpen,
+                      shouldRender: modalContext.shouldRender,
+                  })
+                : children}
+
+            {/* Next modal in the stack (you still have the stack wiring in your fork) */}
+            {nextIndex != null && <ModalRenderer index={nextIndex} />}
+        </>
     )
 })
 
